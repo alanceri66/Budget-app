@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PayCycle</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, updateDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBn59ykHu1TDi89UGpiLTP4lY2YyR3wdso",
+          authDomain: "ourpaycycle.firebaseapp.com",
+          projectId: "ourpaycycle",
+          storageBucket: "ourpaycycle.firebasestorage.app",
+          messagingSenderId: "792169138984",
+          appId: "1:792169138984:web:75a3adcc52e56420f6de1d"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const docRef = doc(db, "household", "budget");
+
+        // Initialize database if it's empty
+        async function checkDB() {
+            const snap = await getDoc(docRef);
+            if (!snap.exists()) {
+                await setDoc(docRef, { buffer: 300 });
+            }
+        }
+        checkDB();
+
+        // Live Syncing
+        onSnapshot(docRef, (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                document.getElementById('buffer-val').innerText = `$${data.buffer.toFixed(2)}`;
+            }
+        });
+
+        window.logSpend = async () => {
+            const amount = prompt("How much did you spend?");
+            if (amount && !isNaN(amount)) {
+                const current = parseFloat(document.getElementById('buffer-val').innerText.replace('$', ''));
+                await updateDoc(docRef, { buffer: current - parseFloat(amount) });
+            }
+        };
+
+        // Date Logic for Mar 13 Payday
+        const nextPayday = new Date("2026-03-13");
+        const today = new Date();
+        const diff = nextPayday - today;
+        document.getElementById('days-left').innerText = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans p-5 select-none min-h-screen">
+    <div class="max-w-md mx-auto">
+        
+        <div class="bg-indigo-600 text-white p-8 rounded-[2.5rem] shadow-2xl mb-6 relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full"></div>
+            <p class="opacity-80 text-xs font-bold uppercase tracking-widest">Next Payday: Mar 13</p>
+            <h1 class="text-6xl font-black mt-2 tracking-tighter"><span id="days-left">--</span> <span class="text-2xl">Days</span></h1>
+            <div class="mt-6 flex gap-2">
+                <span class="bg-indigo-500/50 px-3 py-1 rounded-full text-[10px] font-bold">💰 $1,389 LOCKED FOR BILLS</span>
+            </div>
+        </div>
+
+        <div class="glass-card p-10 rounded-[3rem] shadow-xl text-center mb-6">
+            <p class="text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-4">Live Weekly Buffer</p>
+            <div id="buffer-val" class="text-6xl font-black text-slate-900 tracking-tight">$---.--</div>
+            <button onclick="logSpend()" class="mt-8 w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-xl active:scale-95 transition-all shadow-lg shadow-slate-300">
+                Log Purchase
+            </button>
+        </div>
+
+        <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Stability Path</h3>
+                <span class="text-indigo-600 font-bold text-xs">$2,055 Surplus</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-3">
+                <div class="bg-indigo-500 h-3 rounded-full" style="width: 25%"></div>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-3 italic">"Navigating to stability, one check at a time."</p>
+        </div>
+
+    </div>
+</body>
+</html>
